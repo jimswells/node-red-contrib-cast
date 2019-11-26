@@ -20,7 +20,7 @@ const isFalse = function(val) {
     return (val === 'false' || val === 'no' || val === 'off' || val === 'nein' || val === '0' || (!isNaN(val) && (Number(val) <= 0)));
 };
 
-const errorHandler = function (node, err, messageText, stateText) {
+const errorHandler = function (node, err, msg, messageText, stateText) {
     if (!err) {
         return true;
     }
@@ -49,18 +49,13 @@ const errorHandler = function (node, err, messageText, stateText) {
         messageText += '! (No error message given!)';
     }
 
-    if (node) {
-        node.error(messageText);
-        node.log(util.inspect(err, Object.getOwnPropertyNames(err)));
-        node.status({
-            fill: 'red',
-            shape: 'ring',
-            text: stateText
-        });
-    } else if (console) {
-        console.error(messageText); // eslint-disable-line
-        console.error(util.inspect(err, Object.getOwnPropertyNames(err))); // eslint-disable-line
-    }
+    node.error(messageText, msg || {});
+    node.log(util.inspect(err, Object.getOwnPropertyNames(err)));
+    node.status({
+        fill: 'red',
+        shape: 'ring',
+        text: stateText
+    });
     return false;
 };
 
@@ -176,7 +171,7 @@ const addGenericMetadata = function (media, imageUrl, contentTitle) {
     };
 };
 
-const getSpeechUrl = function (node, text, language, options, callback) {
+const getSpeechUrl = function (node, text, language, options, callback, msg) {
     let speed = 1;
     if (options && !isNaN(options.ttsSpeed)) {
         speed = Number(options.ttsspeed);
@@ -191,13 +186,13 @@ const getSpeechUrl = function (node, text, language, options, callback) {
         };
         doCast(node, media, options, (res, data) => {
             callback(url, data);
-        });
+        }, msg);
     }).catch(err => {
-        errorHandler(node, err, 'Not able to get media file via google-tts', 'error in tts');
+        errorHandler(node, err, msg, 'Not able to get media file via google-tts', 'error in tts');
     });
 };
 
-const doCast = function (node, media, options, callbackResult) {
+const doCast = function (node, media, options, callbackResult, msg) {
     const client = new Client();
 
     const onStatus = function (status) {
@@ -222,13 +217,13 @@ const doCast = function (node, media, options, callbackResult) {
     };
     const onError = function (err) {
         client.close();
-        errorHandler(node, err, 'Client error reported', 'client error');
+        errorHandler(node, err, msg, 'Client error reported', 'client error');
     };
 
     const doGetVolume = function (fkt) {
         client.getVolume((err, vol) => {
             if (err) {
-                errorHandler(node, err, 'Not able to get the volume');
+                errorHandler(node, err, msg, 'Not able to get the volume');
             } else {
                 node.context().set('volume', vol.level);
                 node.debug('volume get from client ' + util.inspect(vol, { colors: true, compact: 10, breakLength: Infinity }));
@@ -267,7 +262,7 @@ const doCast = function (node, media, options, callbackResult) {
             }
 
             if (err) {
-                errorHandler(node, err, 'Not able to set the volume');
+                errorHandler(node, err, msg, 'Not able to set the volume');
             } else if (node) {
                 node.log('volume changed to ' + Math.round(newvol.level * 100));
             }
@@ -305,7 +300,7 @@ const doCast = function (node, media, options, callbackResult) {
 
             client.getSessions((err, sessions) => {
                 if (err) {
-                    errorHandler(node, err, 'Not able to get sessions');
+                    errorHandler(node, err, msg, 'Not able to get sessions');
                 } else {
                     client.join(sessions[0], DefaultMediaReceiver, (err, app) => {
                         if (!app.media.currentSession) {
@@ -325,12 +320,12 @@ const doCast = function (node, media, options, callbackResult) {
             client.getSessions((err, sessions) => {
                 node.debug('session data response' + util.inspect(sessions, { colors: true, compact: 10, breakLength: Infinity }));
                 if (err) {
-                    errorHandler(node, err, 'Not able to get sessions');
+                    errorHandler(node, err, msg, 'Not able to get sessions');
                 } else {
                     client.join(sessions[0], DefaultMediaReceiver, (err, app) => {
                         node.debug('join session response' + util.inspect(app, { colors: true, compact: 10, breakLength: Infinity }));
                         if (err) {
-                            errorHandler(node, err, 'error joining session');
+                            errorHandler(node, err, msg, 'error joining session');
                         } else if (!app.media.currentSession) {
                             node.debug('send stop 1');
                             app.getStatus(() => {
@@ -352,7 +347,7 @@ const doCast = function (node, media, options, callbackResult) {
         client.getSessions((err, sessions) => {
             node.debug('getSessions Callback');
             if (err) {
-                errorHandler(node, err, 'error getting session');
+                errorHandler(node, err, msg, 'error getting session');
             } else {
                 try {
                     checkVolume(options);
@@ -362,7 +357,7 @@ const doCast = function (node, media, options, callbackResult) {
                         client.join(session, DefaultMediaReceiver, (err, player) => {
                             node.debug('join Callback');
                             if (err) {
-                                errorHandler(node, err, 'error joining session');
+                                errorHandler(node, err, msg, 'error joining session');
                             } else {
                                 node.debug('session joined ...');
                                 player.on('status', onStatus);
@@ -395,7 +390,7 @@ const doCast = function (node, media, options, callbackResult) {
                                 node.debug('do get Status from player');
                                 client.getStatus((err, status) => {
                                     if (err) {
-                                        errorHandler(node, err, 'Not able to get status');
+                                        errorHandler(node, err, msg, 'Not able to get status');
                                     } else {
                                         callbackResult(status, options);
                                     }
@@ -411,7 +406,7 @@ const doCast = function (node, media, options, callbackResult) {
                         }, options);
                     }
                 } catch (err) {
-                    errorHandler(node, err, 'Exception occurred on load media', 'exception load media');
+                    errorHandler(node, err, msg, 'Exception occurred on load media', 'exception load media');
                 }
             }
         });
@@ -422,7 +417,7 @@ const doCast = function (node, media, options, callbackResult) {
         node.debug('launchYTCallback');
         client.launch(YoutubeMediaReceiver, function (err, player) {
             if (err) {
-                errorHandler(node, err, 'Not able to launch YoutubeMediaReceiver');
+                errorHandler(node, err, msg, 'Not able to launch YoutubeMediaReceiver');
             }
             try {
                 checkOptions(options)
@@ -432,12 +427,12 @@ const doCast = function (node, media, options, callbackResult) {
                 node.debug('experimental implementation playing youtube videos media=\'' + util.inspect(media, Object.getOwnPropertyNames(media)) + '\'');
                 player.load(media.contentId, (err) => {
                     if (err) {
-                        errorHandler(node, err, 'Not able to load youtube video', 'error load youtube video');
+                        errorHandler(node, err, msg, 'Not able to load youtube video', 'error load youtube video');
                     }
                     client.close();
                 });
             } catch (err) {
-                errorHandler(node, err, 'Exception occurred on load youtube video', 'exception load youtube video');
+                errorHandler(node, err, msg, 'Exception occurred on load youtube video', 'exception load youtube video');
             }
         });
     };
@@ -447,7 +442,7 @@ const doCast = function (node, media, options, callbackResult) {
         node.debug('launchDefCallback');
         client.launch(DefaultMediaReceiver, (err, player) => {
             if (err) {
-                errorHandler(node, err, 'Not able to launch DefaultMediaReceiver');
+                errorHandler(node, err, msg, 'Not able to launch DefaultMediaReceiver');
             }
 
             try {
@@ -473,13 +468,13 @@ const doCast = function (node, media, options, callbackResult) {
                         autoplay: true
                     }, (err, status) => {
                         if (err) {
-                            errorHandler(node, err, 'Not able to load media', 'error load media');
+                            errorHandler(node, err, msg, 'Not able to load media', 'error load media');
                         } else if (options && typeof options.seek !== 'undefined' && !isNaN(options.seek)) {
                             if (options && typeof options.seek !== 'undefined' && !isNaN(options.seek)) {
                                 node.debug('seek to position ' + String(options.seek));
                                 player.seek(options.seek, (err, status) => {
                                     if (err) {
-                                        errorHandler(node, err, 'Not able to seek to position ' + String(options.seek));
+                                        errorHandler(node, err, msg, 'Not able to seek to position ' + String(options.seek));
                                     } else {
                                         callbackResult(status, options);
                                     }
@@ -494,7 +489,7 @@ const doCast = function (node, media, options, callbackResult) {
                     node.debug('get Status from player');
                     client.getStatus((err, status) => {
                         if (err) {
-                            errorHandler(node, err, 'Not able to get status');
+                            errorHandler(node, err, msg, 'Not able to get status');
                         } else {
                             callbackResult(status, options);
                         }
@@ -502,7 +497,7 @@ const doCast = function (node, media, options, callbackResult) {
                     });
                 }
             } catch (err) {
-                errorHandler(node, err, 'Exception occurred on load media', 'exception load media');
+                errorHandler(node, err, msg, 'Exception occurred on load media', 'exception load media');
             }
         });
     };
@@ -510,7 +505,7 @@ const doCast = function (node, media, options, callbackResult) {
     const launchQueueCallback = function () {
         client.launch(DefaultMediaReceiver, (err, player) => {
             if (err) {
-                errorHandler(node, err, 'Not able to launch DefaultMediaReceiver');
+                errorHandler(node, err, msg, 'Not able to launch DefaultMediaReceiver');
             }
 
             player.on('status', status => {
@@ -539,13 +534,13 @@ const doCast = function (node, media, options, callbackResult) {
                             node.log('Loaded QUEUE of ' + media.mediaList.length + ' items');
 
                             if (err) {
-                                errorHandler(node, err, 'Not able to load media', 'error load media');
+                                errorHandler(node, err, msg, 'Not able to load media', 'error load media');
                             } else if (options && typeof options.seek !== 'undefined' && !isNaN(options.seek)) {
                                 if (options && typeof options.seek !== 'undefined' && !isNaN(options.seek)) {
                                     node.debug('seek to position ' + String(options.seek));
                                     player.seek(options.seek, (err, status) => {
                                         if (err) {
-                                            errorHandler(node, err, 'Not able to seek to position ' + String(options.seek));
+                                            errorHandler(node, err, msg, 'Not able to seek to position ' + String(options.seek));
                                         } else {
                                             callbackResult(status, options);
                                         }
@@ -561,7 +556,7 @@ const doCast = function (node, media, options, callbackResult) {
                     node.debug('get Status from player');
                     client.getStatus((err, status) => {
                         if (err) {
-                            errorHandler(node, err, 'Not able to get status');
+                            errorHandler(node, err, msg, 'Not able to get status');
                         } else {
                             callbackResult(status, options);
                         }
@@ -569,7 +564,7 @@ const doCast = function (node, media, options, callbackResult) {
                     });
                 }
             } catch (err) {
-                errorHandler(node, err, 'Exception occurred on load media', 'exception load media');
+                errorHandler(node, err, msg, 'Exception occurred on load media', 'exception load media');
             }
         });
     };
@@ -589,13 +584,13 @@ const doCast = function (node, media, options, callbackResult) {
         } else if (media.mediaList && media.mediaList.length > 0) {
             client.connect(options, launchQueueCallback);
         } else if (media.contentType.indexOf('youtube') !== -1) {
-            node.error('currently not supported');
+            node.error('currently not supported', {});
             // Client.connect(options, launchYTCallback);
         } else {
             client.connect(options, launchDefCallback);
         }
     } catch (err) {
-        errorHandler(node, err, 'Exception occurred on load media', 'exception load media');
+        errorHandler(node, err, msg, 'Exception occurred on load media', 'exception load media');
     }
 };
 
@@ -614,7 +609,6 @@ module.exports = function (RED) {
             //-----------------------------------------
             // Error Handling
             if (!Client) {
-                // this.error('Client not defined!! - Installation Problem, Please reinstall!');
                 this.status({
                     fill: 'red',
                     shape: 'dot',
@@ -625,7 +619,6 @@ module.exports = function (RED) {
             }
 
             if (!DefaultMediaReceiver) {
-                // this.error('DefaultMediaReceiver not defined!! - Installation Problem, Please reinstall!');
                 this.status({
                     fill: 'red',
                     shape: 'dot',
@@ -636,7 +629,6 @@ module.exports = function (RED) {
             }
 
             if (!googletts) {
-                // this.error('googletts not defined!! - Installation Problem, Please reinstall!');
                 this.status({
                     fill: 'red',
                     shape: 'dot',
@@ -682,7 +674,6 @@ module.exports = function (RED) {
             }
             //-------------------------------------------------------------------
             if (typeof data.ip === 'undefined') {
-                // this.error('configuration error: IP is missing!');
                 this.status({
                     fill: 'red',
                     shape: 'dot',
@@ -841,7 +832,7 @@ module.exports = function (RED) {
                                     });
                                     // this.send(msg);
                                     send(msg);
-                                });
+                                }, msg);
                             }, data2.delay, data2);
                             done();
                             return null;
@@ -853,7 +844,9 @@ module.exports = function (RED) {
                         });
                         // this.send(msg);
                         send(msg);
-                    });
+                    }, (errMsg) => {
+                        done(errMsg);
+                    }, msg);
                     done();
                     return null;
                 }
@@ -873,7 +866,7 @@ module.exports = function (RED) {
                             text: 'ok'
                         });
                         send(msg); // this.send(msg);
-                    });
+                    }, msg);
                     done();
                     return null;
                 }
@@ -893,12 +886,10 @@ module.exports = function (RED) {
                         text: 'ok'
                     });
                     this.send(msg);
-                });
+                }, msg);
             } catch (err) {
-                errorHandler(this, err, 'Exception occurred on cast media to output', 'internal error');
+                errorHandler(this, err, msg, 'Exception occurred on cast media to output', 'internal error');
             }
-            // This.error("Input parameter wrong or missing. You need to setup (or give in the input message) the 'url' and 'content type' or the 'message' and 'language'!!");
-            // this.status({fill:"red",shape:"dot",text:"error - input parameter"});
             done();
             return null;
         });

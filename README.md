@@ -19,32 +19,37 @@ These nodes are based on a fork of the node-red-contrib-chromecast. It is for st
 
 ## Table of contents
 
-* [node-red-contrib-cast for NodeRED](#node-red-contrib-cast-for-NodeRED)
-	* [Table of contents](#Table-of-contents)
-	* [Installation](#Installation)
-	* [Quick Start](#Quick-Start)
-		* [stream a url](#stream-a-url)
-		* [sends an text to Google TTS](#sends-an-text-to-Google-TTS)
-		* [play a video on chromecast](#play-a-video-on-chromecast)
-		* [get status of a cast device](#get-status-of-a-cast-device)
-	* [Implemented Nodes](#Implemented-Nodes)
-	* [How to use](#How-to-use)
-		* [Media Types](#Media-Types)
-	* [Advanced](#Advanced)
-	* [Tip](#Tip)
-	* [Examples](#Examples)
-		* [Play local files](#Play-local-files)
-		* [changing ip, url, contentType, streamType](#changing-ip-url-contentType-streamType)
-	* [Bugs and Feedback](#Bugs-and-Feedback)
-		* [:moneybag: Donations ![Donate](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XDPSATTXBXHCL)](#moneybag-Donations-Donate)
-	* [LICENSE](#LICENSE)
-	* [Other](#Other)
+- [node-red-contrib-cast for NodeRED](#node-red-contrib-cast-for-nodered)
+	- [Table of contents](#table-of-contents)
+	- [Installation](#installation)
+	- [Quick Start](#quick-start)
+		- [stream a url](#stream-a-url)
+		- [sends an text to Google TTS](#sends-an-text-to-google-tts)
+		- [play a video on chromecast](#play-a-video-on-chromecast)
+		- [get status of a cast device](#get-status-of-a-cast-device)
+	- [Implemented Nodes](#implemented-nodes)
+	- [How to use](#how-to-use)
+		- [Media Types](#media-types)
+	- [Advanced](#advanced)
+	- [Tip](#tip)
+	- [Examples](#examples)
+		- [Play local files](#play-local-files)
+		- [changing ip, url, contentType, streamType](#changing-ip-url-contenttype-streamtype)
+	- [Bugs and Feedback](#bugs-and-feedback)
+		- [:moneybag: Donations ![Donate](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XDPSATTXBXHCL)](#moneybag-donations-donatehttpswwwpaypalcomcgi-binwebscrcmds-xclickhostedbuttonidxdpsattxbxhcl)
+	- [LICENSE](#license)
+	- [Other](#other)
 
 ## Installation
 
-`npm install node-red-contrib-cast`
+```bash
+cd ~/.node-red
+npm install node-red-contrib-cast
+```
 
 ## Quick Start
+
+This package provides a single node, cast, which will be under the "functions" group in the pallete.
 
 ### stream a url
 
