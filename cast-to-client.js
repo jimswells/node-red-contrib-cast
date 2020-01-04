@@ -527,7 +527,7 @@ const doCast = function (node, media, options, callbackResult, msg) {
 
                     player.queueLoad(
                         media.mediaList, {
-                            startIndex: 1,
+                            startIndex: 0,
                             repeatMode: 'REPEAT_OFF'
                         },
                         (err, status) => {
