@@ -198,11 +198,11 @@ const doCast = function (node, media, options, callbackResult, msg) {
     const onStatus = function (status) {
         node.debug('onStatus ' + util.inspect(status, { colors: true, compact: 10, breakLength: Infinity }));
         if (node) {
-            node.send([null, {
+            node.send({
                 payload: status,
                 type: 'status',
                 topic: options.topic + '/status'
-            }]);
+            });
         }
     };
     const onClose = function () {
@@ -443,6 +443,12 @@ const doCast = function (node, media, options, callbackResult, msg) {
         client.launch(DefaultMediaReceiver, (err, player) => {
             if (err) {
                 errorHandler(node, err, msg, 'Not able to launch DefaultMediaReceiver');
+                return;
+            }
+
+            if (!player) {
+                errorHandler(node, null, msg, 'Not able to load player from DefaultMediaReceiver');
+                return;
             }
 
             try {
@@ -647,6 +653,9 @@ module.exports = function (RED) {
                 'lowerVolumeLimit', 'upperVolumeLimit', 'muted', 'mute',
                 'delay', 'stop', 'pause', 'seek', 'duration', 'status', 'topic'
             ];
+            if (!msg.topic) {
+                msg.topic = 'cast';
+            }
 
             const data = {};
             for (const attr of attrs) {
@@ -830,7 +839,7 @@ module.exports = function (RED) {
                                         shape: 'dot',
                                         text: 'ok'
                                     });
-                                    // this.send(msg);
+                                    msg.type = 'speechResult';
                                     send(msg);
                                 }, msg);
                             }, data2.delay, data2);
@@ -842,7 +851,7 @@ module.exports = function (RED) {
                             shape: 'dot',
                             text: 'ok'
                         });
-                        // this.send(msg);
+                        msg.type = 'outResult';
                         send(msg);
                     }, (errMsg) => {
                         done(errMsg);
@@ -865,7 +874,8 @@ module.exports = function (RED) {
                             shape: 'dot',
                             text: 'ok'
                         });
-                        send(msg); // this.send(msg);
+                        msg.type = 'messageDirect';
+                        send(msg);
                     }, msg);
                     done();
                     return null;
@@ -885,6 +895,7 @@ module.exports = function (RED) {
                         shape: 'dot',
                         text: 'ok'
                     });
+                    msg.type = 'castCommand';
                     this.send(msg);
                 }, msg);
             } catch (err) {
