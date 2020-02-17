@@ -231,7 +231,7 @@ So the config can be at 3 places. The config of the node, a property of the `msg
 
 ### Media Types
 
-Common Video File MIME Types are:
+Example of Common Video File MIME Types are:
 
 | Video Type     | Extension | MIME Type             |
 | -------------- | --------- | --------------------- |
@@ -264,6 +264,8 @@ Common Audio File MIME Types are:
 | Ogg Vorbis     | audio/ogg              |
 | Vorbis         | audio/vorbis           |
 | wav            | audio/vnd.wav          |
+
+Please note that it does not mean that these types are also supported by the respective cast device. For the suported formats, please have a look at the [documentation on Google](https://developers.google.com/cast/docs/media).
 
 ## Advanced
 
